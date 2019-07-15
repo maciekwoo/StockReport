@@ -10,6 +10,10 @@ import time
 quandl.ApiConfig.api_key = os.environ['API_KEY']
 
 
+def short_ticker(ticker):
+    return re.sub(r'\w*/', '', ticker)
+
+
 def _get_all_months(start_dt, end_dt):
     """
     Create collection of dates to iterate through while getting quandl data
@@ -33,36 +37,28 @@ def _get_all_months(start_dt, end_dt):
     return api_dates
 
 
-def _strip_ticker(key):
-    return re.sub(r'\w*/', '', key)
-
-
-def _write_quandl_parquet(ticker, start_dt, end_dt):
-    short_ticker = _strip_ticker(ticker)
-    if os.path.isfile(f'raw_data/{short_ticker}_{start_dt}_{end_dt}.parquet'):
-        print(f'File raw_data/{short_ticker}_{start_dt}_{end_dt}.parquet already exists, skipping write')
-    else:
-        try:
-            data = quandl.get(ticker, start_date=start_dt, end_date=end_dt)
-            data.to_parquet(f'raw_data/{short_ticker}_{start_dt}_{end_dt}.parquet', engine='fastparquet',
+def _download_quandl_parquet(ticker, start_dt, end_dt):
+    try:
+        data = quandl.get(ticker, start_date=start_dt, end_date=end_dt)
+        # Only write non-empty files
+        if data.shape[0] != 0:
+            data.to_parquet(f'raw_data/{short_ticker(ticker)}_{start_dt}_{end_dt}.parquet', engine='fastparquet',
                             compression=None)
-            print(f'File raw_data/{short_ticker}_{start_dt}_{end_dt}.parquet downloaded and created')
+            print(f'File raw_data/{short_ticker(ticker)}_{start_dt}_{end_dt}.parquet downloaded and created')
             time.sleep(0.5)
-        except NotFoundError:
-            print(f'Ticker not found, write to parquet aborted for {ticker} from {start_dt} to {end_dt}')
+    except NotFoundError:
+        print(f'Ticker not found, write to parquet aborted for {ticker} from {start_dt} to {end_dt}')
 
 
-def _get_quandl_data(ticker, start_dt, end_dt):
-    """
-    Get quandl data for given ticker
-    :param ticker: Ticker
-    :param start_dt: fetch data from date
-    :param end_dt: can be > today, will fetch all available
-    :return:
-    """
+def write_new_quandl_data(ticker, start_dt, end_dt):
     months = _get_all_months(start_dt, end_dt)
-    for start, end in months:
-        _write_quandl_parquet(ticker, start, end)
+    months_write = [month for month in months if
+                    not os.path.isfile(f'raw_data/{short_ticker(ticker)}_{month[0]}_{month[1]}.parquet')]
+    months_skipped = [month for month in months if month not in months_write]
+    for month in months_write:
+        _download_quandl_parquet(ticker, month[0], month[1])
+    for month in months_skipped:
+        print(f'File {short_ticker(ticker)}_{month[0]}_{month[1]} skipped, already exists')
 
 # For debugging purposes
-# get_quandl_data("WSE/CDPROJEKT", '2018-01-01', '2019-08-01')
+# write_new_quandl_data("WSE/CDPROJEKT", '2018-01-01', '2019-10-01')
