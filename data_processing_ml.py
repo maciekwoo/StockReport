@@ -34,7 +34,6 @@ class MachineLearning(PreProcessedData):
 class ValueAtRisk(PreProcessedData):
     pass
 
-
 # For debugging purposes
 # my_data_called = PreProcessedData(ticker="WSE/CDPROJEKT", start_dt='2019-01-01', end_dt='2019-08-01')
 # my_df = my_data_called.raw_data.drop("%Change", axis=1)
