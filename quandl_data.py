@@ -19,7 +19,7 @@ def _get_all_months(start_dt, end_dt):
     Create list of tuples of dates to iterate through while getting quandl data
     :param start_dt: fetch data from date
     :param end_dt: fetch data to date, can be > today, will fetch all available data
-    :return:
+    :return: returns list of tuples, with start_dt, end_dt, incomplete
     """
     today = datetime.now().date()
     start = datetime.strptime(start_dt, '%Y-%m-%d')
@@ -30,22 +30,22 @@ def _get_all_months(start_dt, end_dt):
         print(f'{start} is greater than {end}, aborting operation')
     else:
         while start < end:
-            incomplete = 'partial' if start.date() > today or start_plus_one.date() > today else 'full'
-            api_dates.append((date.isoformat(start), date.isoformat(start_plus_one), incomplete))
+            completion = 'partial' if start.date() > today or start_plus_one.date() > today else 'full'
+            api_dates.append((date.isoformat(start), date.isoformat(start_plus_one), completion))
             start += relativedelta(months=1)
             start_plus_one += relativedelta(months=1)
     return api_dates
 
 
-def _download_quandl_parquet(ticker, start_dt, end_dt, incomplete):
+def _download_quandl_parquet(ticker, start_dt, end_dt, completion):
     try:
         data = quandl.get(ticker, start_date=start_dt, end_date=end_dt)
         # Only write non-empty files
         if data.shape[0] != 0:
-            data.to_parquet(f'raw_data/{short_ticker(ticker)}_{start_dt}_{end_dt}_{incomplete}.parquet',
+            data.to_parquet(f'raw_data/{short_ticker(ticker)}_{start_dt}_{end_dt}_{completion}.parquet',
                             engine='fastparquet', compression=None)
             print(
-                f'File raw_data/{short_ticker(ticker)}_{start_dt}_{end_dt}_{incomplete}.parquet downloaded and created')
+                f'File raw_data/{short_ticker(ticker)}_{start_dt}_{end_dt}_{completion}.parquet downloaded and created')
             time.sleep(0.5)
     except NotFoundError:
         print(f'Ticker not found, write to parquet aborted for {ticker} from {start_dt} to {end_dt}')
@@ -67,7 +67,6 @@ def write_new_quandl_data(ticker, start_dt, end_dt):
         _download_quandl_parquet(ticker, month[0], month[1], month[2])
     for month in months_skipped:
         print(f'File {short_ticker(ticker)}_{month[0]}_{month[1]}_{month[2]} skipped, already exists')
-
 
 # For debugging purposes
 # write_new_quandl_data("WSE/CDPROJEKT", '2018-01-01', '2019-10-01')

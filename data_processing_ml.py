@@ -19,10 +19,20 @@ class PreProcessedData:
             my_data = []
             files = os.listdir('raw_data')
             files_filtered = [filename for filename in files if filename.startswith(self._short_ticker)]
+
             for file in files_filtered:
                 parquet_data = pd.read_parquet(f'raw_data/{file}', engine='fastparquet')
                 my_data.append(parquet_data)
-            self._data = pd.concat(my_data).sort_index() if len(my_data) > 1 else pd.DataFrame()
+
+            if len(my_data) > 1:
+                output = pd.concat(my_data).sort_index() \
+                    .reset_index() \
+                    .drop_duplicates(subset='Date', keep='first') \
+                    .set_index('Date')
+            else:
+                output = pd.DataFrame()
+
+            self._data = output
         return self._data
 
 
