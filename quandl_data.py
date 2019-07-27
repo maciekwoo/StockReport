@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 import quandl
 from datetime import datetime
 from datetime import date
@@ -16,7 +18,7 @@ def short_ticker(ticker):
 
 def _get_all_months(start_dt, end_dt):
     """
-    Create list of tuples of dates to iterate through while getting quandl data
+    Create list of tuples of dates to iterate through while downloading quandl data
     :param start_dt: fetch data from date
     :param end_dt: fetch data to date, can be > today, will fetch all available data
     :return: returns list of tuples, with start_dt, end_dt, incomplete
@@ -25,7 +27,7 @@ def _get_all_months(start_dt, end_dt):
     start = datetime.strptime(start_dt, '%Y-%m-%d')
     end = datetime.strptime(end_dt, '%Y-%m-%d')
     start_plus_one = start + relativedelta(months=1)
-    api_dates = []
+    api_dates: List[Tuple[str, str, str]] = []
     if start > end:
         print(f'{start} is greater than {end}, aborting operation')
     else:

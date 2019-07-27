@@ -2,7 +2,8 @@ from quandl_data import short_ticker
 import pandas as pd
 import os
 
-pd.set_option('display.max_columns', 10)
+# where raw data is stored within the project folder structure
+data_folder = 'raw_data'
 
 
 class PreProcessedData:
@@ -17,11 +18,13 @@ class PreProcessedData:
     def raw_data(self):
         if self._data is None:
             my_data = []
-            files = os.listdir('raw_data')
+            files = os.listdir(f'{os.path.dirname(os.path.abspath(__file__))}/{data_folder}')
+            # TODO: add reading only from start_dt to end_dt and not all data
             files_filtered = [filename for filename in files if filename.startswith(self._short_ticker)]
 
             for file in files_filtered:
-                parquet_data = pd.read_parquet(f'raw_data/{file}', engine='fastparquet')
+                parquet_data = pd.read_parquet(f'{os.path.dirname(os.path.abspath(__file__))}/{data_folder}/{file}',
+                                               engine='fastparquet')
                 my_data.append(parquet_data)
 
             if len(my_data) > 1:
@@ -34,16 +37,3 @@ class PreProcessedData:
 
             self._data = output
         return self._data
-
-
-class MachineLearning(PreProcessedData):
-    def create_samples(self):
-        pass
-
-
-class ValueAtRisk(PreProcessedData):
-    pass
-
-# For debugging purposes
-# my_data_called = PreProcessedData(ticker="WSE/CDPROJEKT", start_dt='2019-01-01', end_dt='2019-08-01')
-# my_df = my_data_called.raw_data.drop("%Change", axis=1)
