@@ -28,7 +28,7 @@ def test_short_ticker():
 def test_get_all_months(capfd):
     fn = _get_all_months('2019-01-01', '2018-01-01')
     out, err = capfd.readouterr()
-    assert out == '2019-01-01 00:00:00 is greater than 2018-01-01 00:00:00, aborting operation\n'
+    assert out == 'End date:2018-01-01 00:00:00 has to be greater than Start date:2019-01-01 00:00:00, aborting operation\n'
 
 
 def test_get_all_months_output_tuple():
